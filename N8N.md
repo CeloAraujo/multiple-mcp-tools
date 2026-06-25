@@ -86,7 +86,7 @@ Sales Report Form -> Generate Sales Report -> Has Alerts? -> Show Alerts / Show 
 The form accepts sales files:
 
 ```text
-.csv, .xlsx, .xls
+.csv, .pdf, .docx, .xlsx, .xls
 ```
 
 The file must contain these columns:
@@ -94,6 +94,8 @@ The file must contain these columns:
 ```text
 id, product, price, date
 ```
+
+For PDF and DOCX, the API extracts the document text first, then parses the extracted sales table into the same sales report flow used by CSV and Excel.
 
 The workflow calls:
 

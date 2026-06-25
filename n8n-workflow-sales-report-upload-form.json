@@ -14,7 +14,7 @@
               "fieldType": "file",
               "fieldName": "salesFile",
               "multipleFiles": false,
-              "acceptFileTypes": ".csv,.xlsx,.xls",
+              "acceptFileTypes": ".csv,.pdf,.docx,.xlsx,.xls",
               "requiredField": true
             },
             {

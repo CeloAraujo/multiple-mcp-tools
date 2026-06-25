@@ -14,7 +14,7 @@ O caso de uso principal e:
 ```text
 Usuario envia arquivo de vendas
   -> n8n recebe o upload
-  -> API processa CSV/XLS/XLSX
+  -> API extrai e processa CSV/PDF/DOCX/XLS/XLSX
   -> relatorio de vendas e gerado
   -> alertas sao avaliados
   -> n8n mostra o resultado e pode acionar notificacoes
@@ -23,7 +23,7 @@ Usuario envia arquivo de vendas
 ## Principais Possibilidades
 
 - Upload de arquivos de vendas via formulario n8n.
-- Suporte a arquivos `.csv`, `.xlsx` e `.xls` para relatorio de vendas.
+- Suporte a arquivos `.csv`, `.pdf`, `.docx`, `.xlsx` e `.xls` para relatorio de vendas, desde que o conteudo contenha as colunas `id`, `product`, `price` e `date`.
 - Suporte generico a extracao de texto/metadados de `.csv`, `.pdf`, `.docx`, `.xlsx` e `.xls`.
 - Geracao de relatorio com:
   - receita total;
@@ -101,6 +101,14 @@ POST /automation/sales-report/upload
 
 Ele recebe upload multipart de arquivo de vendas e retorna o relatorio estruturado.
 
+Formatos aceitos nesse fluxo:
+
+```text
+.csv, .pdf, .docx, .xlsx, .xls
+```
+
+Para PDF e DOCX, a API primeiro usa a camada de extracao de documentos e depois converte o texto extraido em registros de venda.
+
 ### n8n
 
 O n8n e a camada visual. Os workflows importaveis ficam na raiz do projeto:
@@ -118,6 +126,8 @@ O workflow recomendado para usuario final e:
 ```text
 n8n-workflow-sales-report-upload-form.json
 ```
+
+Se esse workflow ja tiver sido importado antes no n8n, importe novamente o arquivo atualizado para liberar os formatos PDF, DOCX e Excel no formulario.
 
 Fluxo:
 
@@ -308,6 +318,9 @@ Voce pode usar:
 
 ```text
 data/sales-complete.csv
+data/sales-sample.pdf
+data/sales-sample.docx
+data/sales-sample.xlsx
 ```
 
 5. Configure no formulario:
@@ -362,6 +375,16 @@ curl.exe -X POST `
   http://localhost:3000/automation/sales-report/upload
 ```
 
+Testar PDF no mesmo fluxo:
+
+```powershell
+curl.exe -X POST `
+  -F "file=@data/sales-sample.pdf;type=application/pdf" `
+  -F "alertRevenueBelow=200" `
+  -F "topProductsLimit=3" `
+  http://localhost:3000/automation/sales-report/upload
+```
+
 ## Estrutura Principal
 
 ```text
@@ -394,4 +417,3 @@ src/
 - Criar dashboard no n8n, Google Sheets ou outra ferramenta.
 - Adicionar testes automatizados para parsers e alertas.
 - Revisar `npm audit`, pois a cadeia atual reporta uma vulnerabilidade de alta severidade.
-

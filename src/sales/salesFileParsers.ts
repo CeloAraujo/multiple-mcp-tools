@@ -1,6 +1,8 @@
 import * as XLSX from 'xlsx';
+import type { DocumentExtractionService } from '../documents/documentExtractionService.ts';
 import { getFileExtension } from '../documents/documentUtils.ts';
 import { SalesCsvParser } from './salesCsvParser.ts';
+import { SalesDocumentTextParser } from './salesDocumentTextParser.ts';
 import { SalesRecordMapper, type RawSalesRecord } from './salesRecordMapper.ts';
 import type { SalesRecord } from './types.ts';
 
@@ -62,6 +64,40 @@ export class SpreadsheetSalesFileParser implements SalesFileParser {
     }
 }
 
+export class DocumentSalesFileParser implements SalesFileParser {
+    private readonly documentExtractionService: DocumentExtractionService;
+    private readonly textParser: SalesDocumentTextParser;
+
+    constructor(
+        documentExtractionService: DocumentExtractionService,
+        textParser = new SalesDocumentTextParser(),
+    ) {
+        this.documentExtractionService = documentExtractionService;
+        this.textParser = textParser;
+    }
+
+    supports(input: Pick<SalesFileInput, 'fileName' | 'mimeType'>) {
+        const extension = getFileExtension(input.fileName);
+
+        return ['csv', 'docx', 'pdf', 'xlsx', 'xls'].includes(extension)
+            || input.mimeType === 'text/csv'
+            || input.mimeType === 'application/pdf'
+            || input.mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            || input.mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            || input.mimeType === 'application/vnd.ms-excel';
+    }
+
+    async parse(input: SalesFileInput) {
+        const document = await this.documentExtractionService.extract({
+            fileName: input.fileName,
+            mimeType: input.mimeType,
+            contentBase64: input.content.toString('base64'),
+        });
+
+        return this.textParser.parse(document.text);
+    }
+}
+
 export class SalesFileParserRegistry {
     private readonly parsers: SalesFileParser[];
 
@@ -73,7 +109,7 @@ export class SalesFileParserRegistry {
         const parser = this.parsers.find((candidate) => candidate.supports(input));
 
         if (!parser) {
-            throw new Error(`Unsupported sales file type for "${input.fileName}". Use CSV, XLSX or XLS.`);
+            throw new Error(`Unsupported sales file type for "${input.fileName}". Use CSV, XLSX, XLS, PDF or DOCX.`);
         }
 
         return parser;
