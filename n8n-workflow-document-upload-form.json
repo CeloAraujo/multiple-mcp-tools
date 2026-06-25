@@ -1,0 +1,114 @@
+{
+  "name": "Document Upload Form",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "none",
+        "path": "document-upload",
+        "formTitle": "Enviar documento",
+        "formDescription": "Selecione um arquivo CSV, PDF, DOCX, XLSX ou XLS para extrair texto e metadados.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Documento",
+              "fieldType": "file",
+              "fieldName": "document",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv,.pdf,.docx,.xlsx,.xls",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "responseNode",
+        "options": {
+          "buttonLabel": "Processar documento"
+        }
+      },
+      "id": "be5c7430-1c42-4601-9a57-ac67541a7205",
+      "name": "Upload Document Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        180,
+        300
+      ],
+      "webhookId": "document-upload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/automation/document/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "document"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "34090f85-ea7b-4732-bd48-11affc2d2884",
+      "name": "Extract Uploaded Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { formSubmittedText: `Arquivo processado com sucesso. Tipo: ${$json.document.type}. Caracteres extraidos: ${$json.document.text.length}.`, document: $json.document } }}",
+        "options": {}
+      },
+      "id": "732f80fd-b568-4f96-9e39-04f527e80bb5",
+      "name": "Show Extraction Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload Document Form": {
+      "main": [
+        [
+          {
+            "node": "Extract Uploaded Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Uploaded Document": {
+      "main": [
+        [
+          {
+            "node": "Show Extraction Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "da65247e-e39b-48bd-8047-f6529aed2b9c",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "document-upload-form",
+  "tags": []
+}

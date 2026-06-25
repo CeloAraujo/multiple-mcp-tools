@@ -1,0 +1,172 @@
+{
+  "name": "Automatic Sales Report",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sales-report",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "7bd82986-66d5-4df8-9791-5e5b4754b4a6",
+      "name": "Receive Sales CSV",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/automation/sales-report",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "csv",
+              "value": "={{ $json.body.csv || '' }}"
+            },
+            {
+              "name": "saveReport",
+              "value": "={{ $json.body.saveReport ?? true }}"
+            },
+            {
+              "name": "alertRevenueBelow",
+              "value": "={{ $json.body.alertRevenueBelow || 1000 }}"
+            },
+            {
+              "name": "topProductsLimit",
+              "value": "={{ $json.body.topProductsLimit || 5 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "91af6e18-bfdc-4c55-a38c-cdd4d7e050f5",
+      "name": "Generate Sales Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "7c4adf28-fc15-4f88-9e68-51b89fcf57d6",
+              "leftValue": "={{ $json.report.alerts.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ed758eaa-8776-44f2-991e-9e55e0276b2c",
+      "name": "Has Alerts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: 'attention_required', ...$json } }}",
+        "options": {}
+      },
+      "id": "2a97f0cc-b0bb-427b-af0d-5aeef7474b8c",
+      "name": "Respond With Alerts",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { status: 'ok', ...$json } }}",
+        "options": {}
+      },
+      "id": "c291e749-1ffd-42dc-9fa1-583590e00fd6",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        420
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Sales CSV": {
+      "main": [
+        [
+          {
+            "node": "Generate Sales Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Sales Report": {
+      "main": [
+        [
+          {
+            "node": "Has Alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Alerts?": {
+      "main": [
+        [
+          {
+            "node": "Respond With Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "74db4b11-61c4-4b03-b88c-a451ce098da1",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "automatic-sales-report",
+  "tags": []
+}

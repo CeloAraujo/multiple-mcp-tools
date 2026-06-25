@@ -1,0 +1,210 @@
+{
+  "name": "Sales Report Upload Form",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "none",
+        "path": "sales-report-upload",
+        "formTitle": "Relatorio de vendas",
+        "formDescription": "Envie um arquivo CSV, XLSX ou XLS com as colunas id, product, price e date para gerar o relatorio e verificar alertas.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Arquivo de vendas",
+              "fieldType": "file",
+              "fieldName": "salesFile",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv,.xlsx,.xls",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Alertar se receita for menor que",
+              "fieldType": "number",
+              "fieldName": "alertRevenueBelow",
+              "defaultValue": "1000",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Quantidade de top produtos",
+              "fieldType": "number",
+              "fieldName": "topProductsLimit",
+              "defaultValue": "5",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {
+          "buttonLabel": "Gerar relatorio"
+        }
+      },
+      "id": "d4d30fb7-47fb-4720-92c7-6d8de2c42b8a",
+      "name": "Sales Report Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        160,
+        320
+      ],
+      "webhookId": "sales-report-upload"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/automation/sales-report/upload",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "salesFile"
+            },
+            {
+              "parameterType": "formData",
+              "name": "alertRevenueBelow",
+              "value": "={{ $json.alertRevenueBelow || 1000 }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "topProductsLimit",
+              "value": "={{ $json.topProductsLimit || 5 }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "saveReport",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b8ac2dd6-83cf-485f-a86e-e4ec36025a76",
+      "name": "Generate Sales Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "6c8d11ce-f29c-430a-a702-78c8448a52e4",
+              "leftValue": "={{ $json.report.alerts.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "049b7bbd-2f1c-4b4c-9a16-75eaa946f57a",
+      "name": "Has Alerts?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<h2>Relatorio gerado com alertas</h2><p><strong>Receita total:</strong> {{$json.report.totalRevenue}}</p><p><strong>Alertas:</strong> {{$json.report.alerts.join(' | ')}}</p><p><strong>Arquivo salvo em:</strong> {{$json.report.reportPath}}</p><pre>{{$json.textReport}}</pre>",
+        "options": {}
+      },
+      "id": "b1799ffa-a58d-4b84-a8ff-570ef17b2249",
+      "name": "Show Alerts",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<h2>Relatorio gerado sem alertas</h2><p><strong>Receita total:</strong> {{$json.report.totalRevenue}}</p><p><strong>Arquivo salvo em:</strong> {{$json.report.reportPath}}</p><pre>{{$json.textReport}}</pre>",
+        "options": {}
+      },
+      "id": "ef69f94d-b3cb-4a6a-aebc-6852975e87e9",
+      "name": "Show OK",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        420
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Sales Report Form": {
+      "main": [
+        [
+          {
+            "node": "Generate Sales Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Sales Report": {
+      "main": [
+        [
+          {
+            "node": "Has Alerts?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Alerts?": {
+      "main": [
+        [
+          {
+            "node": "Show Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e187e984-8b84-454f-965e-2a9eab0fd8ff",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "sales-report-upload-form",
+  "tags": []
+}

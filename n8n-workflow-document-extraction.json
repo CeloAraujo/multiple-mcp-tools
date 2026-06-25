@@ -1,0 +1,103 @@
+{
+  "name": "Document Extraction",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "document-extraction",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "0211f9d0-9866-4cd5-8621-3ff3a143d89f",
+      "name": "Receive Document",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        220,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/automation/document/extract",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "fileName",
+              "value": "={{ $json.body.fileName }}"
+            },
+            {
+              "name": "mimeType",
+              "value": "={{ $json.body.mimeType || '' }}"
+            },
+            {
+              "name": "contentBase64",
+              "value": "={{ $json.body.contentBase64 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "04151650-e45e-4f8f-b5d7-e2be48976943",
+      "name": "Extract Document",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "236816bc-2921-4f9f-9a8e-3f50e6114025",
+      "name": "Respond Extracted Text",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        840,
+        300
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Receive Document": {
+      "main": [
+        [
+          {
+            "node": "Extract Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Document": {
+      "main": [
+        [
+          {
+            "node": "Respond Extracted Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "478d209a-383b-4b5a-9668-57eb0cf90f96",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "document-extraction",
+  "tags": []
+}

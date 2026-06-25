@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+coverage/
+outputs/
+reports/*.txt
+!reports/.gitkeep
+
+# LangGraph API
+.langgraph_api
